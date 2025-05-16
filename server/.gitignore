@@ -1,0 +1,12 @@
+# 의존성 패키지
+/node_modules
+
+# 환경 변수
+.env
+
+# 로그 파일
+logs
+*.log
+
+# 기타 파일
+.DS_Store
