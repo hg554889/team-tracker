@@ -161,11 +161,11 @@ exports.createReport = async (req, res) => {
       });
     }
 
-    // 사용자가 팀원이거나 관리자인지 확인
-    if (req.user.role !== 'admin' && !req.user.teams.includes(team._id)) {
+    // 사용자가 팀 리더이거나 관리자인지 확인
+    if (req.user.role !== 'admin' && team.leader.toString() !== req.user.id) {
       return res.status(403).json({
         success: false,
-        error: '이 팀의 보고서를 생성할 권한이 없습니다'
+        error: '보고서를 생성할 권한이 없습니다'
       });
     }
 

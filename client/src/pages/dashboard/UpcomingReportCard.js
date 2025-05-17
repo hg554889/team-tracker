@@ -1,7 +1,8 @@
 // client/src/pages/dashboard/UpcomingReportCard.js
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link } from 'react-router-dom';
+import { AuthContext } from '../../context/AuthContext';
 import styled from 'styled-components';
 import api from '../../services/api';
 import { format, differenceInDays } from 'date-fns';
@@ -141,6 +142,7 @@ const UpcomingReportCard = ({ report }) => {
   const [team, setTeam] = useState(null);
   const [loading, setLoading] = useState(true);
   const [daysLeft, setDaysLeft] = useState(0);
+  const { user } = useContext(AuthContext);
   
   useEffect(() => {
     const fetchTeam = async () => {
@@ -182,6 +184,12 @@ const UpcomingReportCard = ({ report }) => {
   };
   
   const isUrgent = daysLeft <= 2;
+  
+  // 권한 확인 (팀 리더, 관리자)
+  const isAuthorized = () => {
+    if (!team || !user) return false;
+    return team.leader._id === user._id || user.role === 'admin';
+  };
   
   if (loading) {
     return <div>로딩 중...</div>;
@@ -235,9 +243,11 @@ const UpcomingReportCard = ({ report }) => {
       </CardBody>
       
       <CardFooter>
-        <EditButton to={`/reports/${report._id}/edit`}>
-          보고서 작성하기
-        </EditButton>
+        {isAuthorized() && (
+          <EditButton to={`/reports/${report._id}/edit`}>
+            보고서 작성하기
+          </EditButton>
+        )}
       </CardFooter>
     </Card>
   );

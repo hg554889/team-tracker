@@ -530,7 +530,7 @@ const ReportDetails = () => {
     if (!report || !user) return false;
     
     const isSubmitter = report.submittedBy._id === user._id;
-    const isTeamLeader = report.team.leader === user._id;
+    const isTeamLeader = report.team.leader._id === user._id;
     const isAdmin = user.role === 'admin';
     
     return isSubmitter || isTeamLeader || isAdmin;
@@ -539,7 +539,7 @@ const ReportDetails = () => {
   // 팀원 여부 확인
   const isTeamMember = () => {
     if (!report || !user) return false;
-    return user.teams.includes(report.team._id);
+    return report.team.members.some(member => member._id === user._id);
   };
   
   if (loading) {

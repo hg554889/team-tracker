@@ -61,20 +61,29 @@ exports.authorize = (...roles) => {
 
 // 팀 멤버 확인 미들웨어
 exports.checkTeamMembership = async (req, res, next) => {
-  const teamId = req.params.teamId || req.params.id;
-  
-  // 관리자는 모든 팀에 접근 가능
-  if (req.user.role === 'admin') {
-    return next();
-  }
-  
-  // 사용자가 팀에 속해 있는지 확인
-  if (!req.user.teams.includes(teamId)) {
-    return res.status(403).json({
+  try {
+    const teamId = req.params.teamId || req.params.id;
+    
+    // 관리자는 모든 팀에 접근 가능
+    if (req.user.role === 'admin') {
+      return next();
+    }
+    
+    // 사용자가 팀에 속해 있는지 확인
+    const isMember = req.user.teams.some(team => team.toString() === teamId);
+    if (!isMember) {
+      return res.status(403).json({
+        success: false,
+        error: '이 팀에 접근할 권한이 없습니다'
+      });
+    }
+    
+    next();
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({
       success: false,
-      error: '이 팀에 접근할 권한이 없습니다'
+      error: '서버 오류'
     });
   }
-  
-  next();
 };

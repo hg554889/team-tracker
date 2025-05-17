@@ -326,10 +326,16 @@ const TeamDetails = () => {
     return type === 'project' ? '프로젝트' : '스터디';
   };
   
-  // 권한 확인 (리더, 관리자)
+  // 권한 확인 (팀 리더, 관리자)
   const isAuthorized = () => {
     if (!team || !user) return false;
-    return user.role === 'admin' || team.leader._id === user._id;
+    return team.leader._id === user._id || user.role === 'admin';
+  };
+  
+  // 팀원 여부 확인
+  const isTeamMember = () => {
+    if (!team || !user) return false;
+    return team.members.some(member => member._id === user._id);
   };
   
   if (loading) {
@@ -407,9 +413,11 @@ const TeamDetails = () => {
       <ContentSection>
         <SectionTitle>
           주간 보고서
-          <AddButton to={`/teams/${id}/reports/create`}>
-            <i className="fas fa-plus"></i> 보고서 작성
-          </AddButton>
+          {isAuthorized() && (
+            <AddButton to={`/teams/${id}/reports/create`}>
+              <i className="fas fa-plus"></i> 보고서 작성
+            </AddButton>
+          )}
         </SectionTitle>
         
         <ContentCard>
