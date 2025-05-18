@@ -116,6 +116,9 @@ exports.createTeam = async (req, res) => {
       { new: true }
     );
 
+    console.log('팀 생성 요청 데이터:', req.body);
+    console.log('생성된 팀:', team);
+
     res.status(201).json({
       success: true,
       data: team

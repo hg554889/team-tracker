@@ -25,10 +25,10 @@ export const AuthProvider = ({ children }) => {
     const loadUser = async () => {
       if (localStorage.token) {
         setAuthToken(localStorage.token);
-        
+
         try {
           const res = await api.get('/auth/me');
-          
+
           setState({
             ...state,
             isAuthenticated: true,
@@ -36,16 +36,16 @@ export const AuthProvider = ({ children }) => {
             loading: false
           });
         } catch (err) {
+          console.error('Failed to load user:', err.message);
           localStorage.removeItem('token');
           setAuthToken(null);
-          
           setState({
             ...state,
             token: null,
             isAuthenticated: false,
             user: null,
             loading: false,
-            error: err.response && err.response.data ? err.response.data.error : '인증 오류'
+            error: '인증 실패. 다시 로그인하세요.'
           });
         }
       } else {

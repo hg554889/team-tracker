@@ -173,7 +173,7 @@ const TeamProgressCard = ({ team }) => {
   useEffect(() => {
     const fetchReports = async () => {
       try {
-        const res = await api.get(`/teams/${team._id}/reports`);
+        const res = await api.get(`/reports/teams/${team._id}`);
         const latestReports = res.data.data.sort((a, b) => 
           new Date(b.createdAt) - new Date(a.createdAt)
         ).slice(0, 3);
@@ -189,7 +189,11 @@ const TeamProgressCard = ({ team }) => {
           setProgress(avgProgress);
         }
       } catch (err) {
-        console.error('팀 보고서 로드 오류:', err);
+        if (err.status === 404) {
+          console.warn('팀 보고서가 존재하지 않습니다.');
+        } else {
+          console.error('팀 보고서 로드 오류:', err);
+        }
       }
     };
     

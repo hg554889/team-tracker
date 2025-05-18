@@ -272,13 +272,18 @@ const TeamDetails = () => {
         const teamRes = await api.get(`/teams/${id}`);
         setTeam(teamRes.data.data);
         
-        const reportsRes = await api.get(`/teams/${id}/reports`);
+        const reportsRes = await api.get(`/reports/teams/${id}`);
         setReports(reportsRes.data.data);
         
         setLoading(false);
       } catch (err) {
-        console.error('팀 정보 로드 오류:', err);
-        setAlert('팀 정보를 불러오는데 실패했습니다', 'danger');
+        if (err.status === 404) {
+          console.warn('팀 또는 보고서를 찾을 수 없습니다.');
+          setAlert('팀 또는 보고서가 존재하지 않습니다.', 'warning');
+        } else {
+          console.error('팀 정보 로드 오류:', err);
+          setAlert('팀 정보를 불러오는데 실패했습니다', 'danger');
+        }
         navigate('/teams');
       }
     };
@@ -413,7 +418,7 @@ const TeamDetails = () => {
       <ContentSection>
         <SectionTitle>
           주간 보고서
-          {isAuthorized() && (
+          {(isAuthorized() || isTeamMember()) && (
             <AddButton to={`/teams/${id}/reports/create`}>
               <i className="fas fa-plus"></i> 보고서 작성
             </AddButton>
