@@ -43,27 +43,6 @@
 인증: JWT
 기타: Chart.js (데이터 시각화), date-fns (날짜 관리)
 
-### 프로젝트 구조
-team-tracker/
-├── client/                 # 리액트 프론트엔드
-│   ├── public/
-│   └── src/
-│       ├── components/     # UI 컴포넌트
-│       ├── pages/          # 페이지 컴포넌트
-│       ├── context/        # 리액트 컨텍스트
-│       ├── hooks/          # 커스텀 훅
-│       ├── services/       # API 서비스
-│       ├── utils/          # 유틸리티 함수
-│       └── App.js          # 메인 앱 컴포넌트
-├── server/                 # Express 백엔드
-│   ├── controllers/        # 컨트롤러
-│   ├── models/             # 데이터 모델
-│   ├── routes/             # API 라우트
-│   ├── middleware/         # 미들웨어
-│   ├── config/             # 설정 파일
-│   └── server.js           # 메인 서버 파일
-└── package.json            # 프로젝트 메타데이터
-
 ### 설치 및 실행 방법
 1. 저장소 클론
 git clone https://github.com/hg554889/team-tracker.git
