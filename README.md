@@ -1,4 +1,4 @@
-## Team Tracker Service
+# Team Tracker Service
 
 동아리 팀 주간 트래커 웹 서비스
 동아리나 스터디 팀의 주간 활동을 체계적으로 관리하고 추적할 수 있는 웹 애플리케이션입니다.
@@ -46,7 +46,7 @@
 ### 설치 및 실행 방법
 1. 저장소 클론
 git clone https://github.com/hg554889/team-tracker.git
-cd team-tracker
+이후 cd team-tracker
 
 2. 패키지 설치
 npm run install-all
