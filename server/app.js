@@ -5,6 +5,9 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 require('dotenv').config();
 
+// db 설정 임포트
+const { connectDB } = require('./config/db');
+
 // 라우트 임포트
 const authRoutes = require('./routes/auth');
 const teamRoutes = require('./routes/teams');
@@ -21,13 +24,7 @@ app.use(helmet());
 app.use(morgan('dev'));
 
 // 데이터베이스 연결
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log('MongoDB 연결 성공!'))
-  .catch((err) => {
-    console.error('MongoDB 연결 실패:', err.message);
-    process.exit(1);
-  });
+connectDB();
 
 // 라우트 설정
 app.use('/api/auth', authRoutes);
