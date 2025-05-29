@@ -29,7 +29,14 @@ router.post(
   login
 );
 
-// 현재 사용자 정보 라우트
+/**
+ * @route  GET /api/auth/me
+ * @desc   현재 로그인된 사용자 정보 가져오기
+ * @access Private
+ * POSTMAN 테스트시 Header에 Authorization 추가 필요
+ * key: Authorization
+ * Value: Bearer <token>
+ */
 router.get('/me', protect, getCurrentUser);
 
 // 로그아웃 라우트
