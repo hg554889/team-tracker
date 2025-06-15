@@ -19,7 +19,10 @@ const app = express();
 
 // 미들웨어 설정
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: process.env.CORS_ORIGIN || 'http://localhost:3000', // CORS 허용 도메인
+  credentials: true // 쿠키를 포함한 요청 허용
+}));
 app.use(helmet());
 app.use(morgan('dev'));
 
