@@ -154,12 +154,12 @@ const Dashboard = () => {
         console.error('대시보드 데이터 로드 오류:', err);
         setAlert('대시보드 데이터를 불러오는데 실패했습니다', 'danger');
       } finally {
-        setLoading(false); // 무조건 호출
+        setLoading(false);
       }
     };
 
     fetchDashboardData();
-  }, [setAlert]);
+  }, []);
   
   if (loading) {
     return <Spinner />;

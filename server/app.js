@@ -30,10 +30,10 @@ app.use(morgan('dev'));
 connectDB();
 
 // 라우트 설정
-app.use('/api/auth', authRoutes);
-app.use('/api/teams', teamRoutes);
-app.use('/api/reports', reportRoutes);
-app.use('/api/contributions', contributionRoutes);
+app.use('/auth', authRoutes);
+app.use('/teams', teamRoutes);
+app.use('/reports', reportRoutes);
+app.use('/contributions', contributionRoutes);
 
 // 기본 라우트
 app.get('/', (req, res) => {
