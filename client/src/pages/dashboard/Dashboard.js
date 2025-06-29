@@ -149,16 +149,15 @@ const Dashboard = () => {
           averageCompletion,
           pendingReports: pendingReports.length
         });
-        
         setUpcomingReports(upcoming);
-        setLoading(false);
       } catch (err) {
         console.error('대시보드 데이터 로드 오류:', err);
         setAlert('대시보드 데이터를 불러오는데 실패했습니다', 'danger');
-        setLoading(false);
+      } finally {
+        setLoading(false); // 무조건 호출
       }
     };
-    
+
     fetchDashboardData();
   }, [setAlert]);
   
@@ -243,4 +242,4 @@ const Dashboard = () => {
   );
 };
 
-export default Dashboard;   
+export default Dashboard;
