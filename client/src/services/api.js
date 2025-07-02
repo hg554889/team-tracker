@@ -4,7 +4,7 @@ import axios from 'axios';
 
 // 기본 설정 값
 const api = axios.create({
-  baseURL: process.env.REACT_APP_API_URL || 'http://localhost:5000',
+  baseURL: process.env.NODE_ENV === 'development' ? 'http://localhost:5000' : process.env.REACT_APP_API_URL,
   headers: {
     'Content-Type': 'application/json'
   }
