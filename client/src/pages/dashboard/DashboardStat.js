@@ -1,56 +1,68 @@
 // client/src/pages/dashboard/DashboardStat.js
-
 import React from 'react';
-import styled from 'styled-components';
+import { Link } from 'react-router-dom';
 
-const StatCard = styled.div`
-  background-color: white;
-  border-radius: 8px;
-  padding: 1.5rem;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  display: flex;
-  align-items: center;
-`;
+const DashboardStat = ({ title, value, icon, color = 'primary', link, subtitle }) => {
+  const getColorClass = (color) => {
+    switch (color) {
+      case 'success': return 'success';
+      case 'warning': return 'warning';
+      case 'danger': return 'danger';
+      case 'info': return 'info';
+      case 'secondary': return 'secondary';
+      default: return 'primary';
+    }
+  };
 
-const IconContainer = styled.div`
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  background-color: ${props => `${props.color}10`};
-  color: ${props => props.color};
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 1rem;
-  font-size: 1.5rem;
-`;
+  const StatContent = () => (
+    <div className={`stat-card ${getColorClass(color)}`}>
+      <div className="d-flex align-items-center justify-content-between">
+        <div>
+          <div className="stat-value">
+            {typeof value === 'number' ? value.toLocaleString() : value}
+          </div>
+          <div className="stat-label">
+            {title}
+          </div>
+          {subtitle && (
+            <div className="stat-subtitle text-muted" style={{ fontSize: '0.75rem', marginTop: '0.25rem' }}>
+              {subtitle}
+            </div>
+          )}
+        </div>
+        <div className="stat-icon">
+          <i 
+            className={icon} 
+            style={{ 
+              fontSize: '2rem', 
+              opacity: 0.6,
+              color: color === 'warning' ? '#856404' : 'inherit'
+            }}
+          ></i>
+        </div>
+      </div>
+      
+      {link && (
+        <div className="stat-footer mt-3">
+          <small className="text-muted">
+            <i className="fas fa-arrow-right mr-1"></i>
+            자세히 보기
+          </small>
+        </div>
+      )}
+    </div>
+  );
 
-const StatContent = styled.div`
-  flex: 1;
-`;
-
-const StatValue = styled.div`
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: #212529;
-`;
-
-const StatTitle = styled.div`
-  font-size: 0.875rem;
-  color: #6c757d;
-`;
-
-const DashboardStat = ({ title, value, icon, color }) => {
-  return (
-    <StatCard>
-      <IconContainer color={color}>
-        <i className={`fas fa-${icon}`}></i>
-      </IconContainer>
-      <StatContent>
-        <StatValue>{value}</StatValue>
-        <StatTitle>{title}</StatTitle>
-      </StatContent>
-    </StatCard>
+  return link ? (
+    <Link 
+      to={link} 
+      className="text-decoration-none"
+      style={{ color: 'inherit' }}
+    >
+      <StatContent />
+    </Link>
+  ) : (
+    <StatContent />
   );
 };
 

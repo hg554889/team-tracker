@@ -1,152 +1,125 @@
 // client/src/components/layout/Sidebar.js
-
-import React, { useContext } from 'react';
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { NavLink } from 'react-router-dom';
-import { AuthContext } from '../../context/AuthContext';
-import styled from 'styled-components';
-
-const SidebarContainer = styled.div.withConfig({
-  shouldForwardProp: (prop) => prop !== 'isOpen',
-})`
-  position: fixed;
-  left: 0;
-  top: 60px;
-  bottom: 0;
-  width: 240px;
-  background-color: #2f3136;
-  color: #fff;
-  overflow-y: auto;
-  transition: all 0.3s;
-  z-index: 990;
-  
-  @media (max-width: 768px) {
-    transform: ${(props) => (props.isOpen ? 'translateX(0)' : 'translateX(-100%)')};
-  }
-`;
-
-const SidebarHeader = styled.div`
-  padding: 20px;
-  background-color: #222529;
-`;
-
-const SidebarTitle = styled.h3`
-  color: #fff;
-  margin: 0;
-  font-size: 1.2rem;
-`;
-
-const SidebarMenu = styled.ul`
-  list-style: none;
-  padding: 0;
-  margin: 0;
-`;
-
-const SidebarMenuItem = styled.li`
-  padding: 0;
-`;
-
-const SidebarLink = styled(NavLink)`
-  display: block;
-  padding: 15px 20px;
-  color: #b9bbbe;
-  text-decoration: none;
-  transition: all 0.3s;
-  border-left: 3px solid transparent;
-  
-  &:hover, &.active {
-    background-color: #36393f;
-    color: #fff;
-    border-left-color: #0366d6;
-  }
-  
-  i {
-    margin-right: 10px;
-    width: 20px;  /* 아이콘 너비 고정 */
-    text-align: center;  /* 아이콘 중앙 정렬 */
-  }
-`;
-
-const SidebarSection = styled.div`
-  margin-top: 20px;
-`;
-
-const SidebarSubtitle = styled.h4`
-  color: #b9bbbe;
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  padding: 10px 20px;
-  margin: 0;
-`;
+import { useAuth } from '../../context/AuthContext';
 
 const Sidebar = () => {
-  const { user } = useContext(AuthContext);
-  const [isOpen, setIsOpen] = React.useState(false);
+  const { user } = useAuth();
+  const navigate = useNavigate();
+
+  // Define menu items based on user role
+  const getMenuItems = () => {
+    const menuItems = [
+      {
+        path: '/dashboard',
+        icon: 'fas fa-tachometer-alt',
+        label: '대시보드',
+        roles: ['admin', 'executive', 'leader', 'member']
+      },
+      {
+        path: '/teams',
+        icon: 'fas fa-users',
+        label: '팀 관리',
+        roles: ['admin', 'executive', 'leader', 'member']
+      },
+      {
+        path: '/reports',
+        icon: 'fas fa-file-alt',
+        label: '보고서',
+        roles: ['admin', 'executive', 'leader', 'member']
+      }
+    ];
+
+    // Filter menu items based on user role
+    return menuItems.filter(item => 
+      item.roles.includes(user?.role || 'member')
+    );
+  };
+
+  const menuItems = getMenuItems();
 
   return (
-    <SidebarContainer isOpen={isOpen}>
-      <SidebarHeader>
-        <SidebarTitle>메뉴</SidebarTitle>
-      </SidebarHeader>
-      
-      <SidebarMenu>
-        <SidebarMenuItem>
-          <SidebarLink to="/">
-            <i className="fas fa-tachometer-alt"></i> 대시보드
-          </SidebarLink>
-        </SidebarMenuItem>
-        
-        <SidebarMenuItem>
-          <SidebarLink to="/teams">
-            <i className="fas fa-users"></i> 팀 관리
-          </SidebarLink>
-        </SidebarMenuItem>
-        
-        <SidebarMenuItem>
-          <SidebarLink to="/reports">
-            <i className="fas fa-file-alt"></i> 주간 보고서
-          </SidebarLink>
-        </SidebarMenuItem>
-        
-        {/* 팀 생성 링크 - admin과 leader만 표시 */}
-        {user && (user.role === 'admin' || user.role === 'leader') && (
-          <SidebarMenuItem>
-            <SidebarLink to="/teams/create">
-              <i className="fas fa-plus"></i> 새 팀 만들기
-            </SidebarLink>
-          </SidebarMenuItem>
-        )}
-      </SidebarMenu>  
-      
-      {/* 관리자인 경우에만 표시 */}
-      {user && user.role === 'admin' && (
-        <SidebarSection>
-          <SidebarSubtitle>관리자</SidebarSubtitle>
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarLink to="/admin/users">
-                <i className="fas fa-user-cog"></i> 사용자 관리
-              </SidebarLink>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-              <SidebarLink to="/admin/stats">
-                <i className="fas fa-chart-bar"></i> 통계
-              </SidebarLink>
-            </SidebarMenuItem>
-          </SidebarMenu>
-        </SidebarSection>
-      )}
-      
-      {/* 모바일에서 메뉴 토글 버튼 */}
-      <div className="d-block d-md-none">
-        <button 
-          className="btn btn-primary btn-sm"
-          style={{ position: 'fixed', left: '10px', bottom: '10px', zIndex: 1000 }}
-          onClick={() => setIsOpen(!isOpen)}
-        >
-          <i className={`fas fa-${isOpen ? 'times' : 'bars'}`}></i>
-        </button>
-      </div>
-    </SidebarContainer>
+    <aside className="sidebar" style={{ width: 200, background: '#f5f5f5', height: '100vh', position: 'fixed', top: 56, left: 0, padding: 24, borderRight: '1px solid #eee' }}>
+      <nav>
+        <ul style={{ listStyle: 'none', padding: 0 }}>
+          {menuItems.map((item) => (
+            <li style={{ marginBottom: 16 }} key={item.path}>
+              <button onClick={() => navigate(item.path)} className="nav-link" style={{ background: 'none', border: 'none', color: '#222', fontSize: 16, cursor: 'pointer' }}>
+                <i className={`${item.icon} mr-2`}></i>
+                {item.label}
+              </button>
+            </li>
+          ))}
+          
+          {/* Role-specific menu items */}
+          {(user?.role === 'admin' || user?.role === 'executive') && (
+            <>
+              <div className="nav-divider my-2" style={{ borderTop: '1px solid #e9ecef' }}></div>
+              <div className="nav-header px-3 py-2 text-muted text-uppercase small">
+                관리자 메뉴
+              </div>
+              {user?.role === 'admin' && (
+                <li style={{ marginBottom: 16 }}>
+                  <NavLink
+                    to="/admin/users"
+                    className={({ isActive }) => 
+                      `nav-link ${isActive ? 'active' : ''}`
+                    }
+                    style={{ background: 'none', border: 'none', color: '#222', fontSize: 16, cursor: 'pointer' }}
+                  >
+                    <i className="fas fa-user-cog mr-2"></i>
+                    사용자 관리
+                  </NavLink>
+                </li>
+              )}
+              <li>
+                <NavLink
+                  to="/admin/statistics"
+                  className={({ isActive }) => 
+                    `nav-link ${isActive ? 'active' : ''}`
+                  }
+                  style={{ background: 'none', border: 'none', color: '#222', fontSize: 16, cursor: 'pointer' }}
+                >
+                  <i className="fas fa-chart-bar mr-2"></i>
+                  통계 관리
+                </NavLink>
+              </li>
+            </>
+          )}
+          
+          {/* Quick Actions */}
+          <div className="nav-divider my-2" style={{ borderTop: '1px solid #e9ecef' }}></div>
+          <div className="nav-header px-3 py-2 text-muted text-uppercase small">
+            빠른 작업
+          </div>
+          
+          {(user?.role === 'admin' || user?.role === 'executive' || user?.role === 'leader') && (
+            <li>
+              <NavLink
+                to="/teams/create"
+                className="nav-link"
+                style={{ background: 'none', border: 'none', color: '#222', fontSize: 16, cursor: 'pointer' }}
+              >
+                <i className="fas fa-plus mr-2"></i>
+                팀 생성
+              </NavLink>
+            </li>
+          )}
+          
+          <li>
+            <NavLink
+              to="/reports/create"
+              className="nav-link"
+              style={{ background: 'none', border: 'none', color: '#222', fontSize: 16, cursor: 'pointer' }}
+            >
+              <i className="fas fa-edit mr-2"></i>
+              보고서 작성
+            </NavLink>
+          </li>
+        </ul>
+      </nav>
+    </aside>
   );
 };
 

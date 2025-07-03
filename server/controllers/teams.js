@@ -234,12 +234,12 @@ exports.deleteTeam = async (req, res) => {
 // @access Private (Team Leader, Admin)
 exports.addTeamMember = async (req, res) => {
   try {
-    const { userId } = req.body;
+    const { email } = req.body;
 
-    if (!userId) {
+    if (!email) {
       return res.status(400).json({
         success: false,
-        error: '사용자 ID는 필수입니다'
+        error: '사용자 이메일은 필수입니다'
       });
     }
 
@@ -261,7 +261,7 @@ exports.addTeamMember = async (req, res) => {
     }
 
     // 추가할 사용자 존재 확인
-    const user = await User.findById(userId);
+    const user = await User.findOne({ email });
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -270,7 +270,7 @@ exports.addTeamMember = async (req, res) => {
     }
 
     // 이미 팀원인지 확인
-    if (team.members.includes(userId)) {
+    if (team.members.includes(user._id)) {
       return res.status(400).json({
         success: false,
         error: '이미 팀원입니다'
@@ -278,12 +278,14 @@ exports.addTeamMember = async (req, res) => {
     }
 
     // 팀원 추가
-    team.members.push(userId);
+    team.members.push(user._id);
     await team.save();
 
     // 사용자 정보에 팀 추가
-    user.teams.push(team._id);
-    await user.save();
+    if (!user.teams.includes(team._id)) {
+      user.teams.push(team._id);
+      await user.save();
+    }
 
     res.status(200).json({
       success: true,

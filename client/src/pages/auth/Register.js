@@ -1,96 +1,8 @@
 // client/src/pages/auth/Register.js
-
-import React, { useState, useContext, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthContext } from '../../context/AuthContext';
-import AlertContext from '../../context/AlertContext';
-import styled from 'styled-components';
-
-const RegisterContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  min-height: 100vh;
-  background-color: #f5f7fa;
-`;
-
-const RegisterCard = styled.div`
-  width: 100%;
-  max-width: 500px;
-  background-color: #fff;
-  border-radius: 8px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
-  padding: 2rem;
-`;
-
-const RegisterTitle = styled.h2`
-  text-align: center;
-  margin-bottom: 1.5rem;
-  color: #0366d6;
-`;
-
-const RegisterForm = styled.form`
-  display: flex;
-  flex-direction: column;
-`;
-
-const FormGroup = styled.div`
-  margin-bottom: 1.2rem;
-`;
-
-const FormLabel = styled.label`
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-`;
-
-const FormInput = styled.input`
-  display: block;
-  width: 100%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  line-height: 1.5;
-  color: #495057;
-  background-color: #fff;
-  border: 1px solid #ced4da;
-  border-radius: 4px;
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-  
-  &:focus {
-    border-color: #0366d6;
-    outline: 0;
-    box-shadow: 0 0 0 0.2rem rgba(3, 102, 214, 0.25);
-  }
-`;
-
-const SubmitButton = styled.button`
-  display: block;
-  width: 100%;
-  padding: 0.75rem;
-  font-size: 1rem;
-  font-weight: 500;
-  color: #fff;
-  background-color: #0366d6;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.15s ease-in-out;
-  
-  &:hover {
-    background-color: #0254ac;
-  }
-  
-  &:disabled {
-    background-color: #6c757d;
-    cursor: not-allowed;
-  }
-`;
-
-const LoginLink = styled.div`
-  text-align: center;
-  margin-top: 1.5rem;
-  font-size: 0.9rem;
-`;
+import { useAuth } from '../../context/AuthContext';
+import { useAlert } from '../../context/AlertContext';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -101,123 +13,194 @@ const Register = () => {
     password2: ''
   });
   const [loading, setLoading] = useState(false);
-  
+  const [validationErrors, setValidationErrors] = useState({});
+
   const { name, username, email, password, password2 } = formData;
-  const { register, isAuthenticated } = useContext(AuthContext);
-  const { setAlert } = useContext(AlertContext);
+  const { register, isAuthenticated, error, clearErrors } = useAuth();
+  const { setAlert } = useAlert();
   const navigate = useNavigate();
-  
-  // 이미 로그인한 경우 대시보드로 리디렉션
+
   useEffect(() => {
     if (isAuthenticated) {
-      navigate('/');
+      navigate('/dashboard');
     }
-  }, [isAuthenticated, navigate]);
-  
+    
+    // Clear errors when component mounts
+    clearErrors();
+  }, [isAuthenticated, navigate, clearErrors]);
+
   const onChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    
+    // Clear validation error for this field
+    if (validationErrors[e.target.name]) {
+      setValidationErrors({
+        ...validationErrors,
+        [e.target.name]: ''
+      });
+    }
   };
-  
+
+  const validateForm = () => {
+    const errors = {};
+
+    // Name validation
+    if (!name.trim()) {
+      errors.name = '이름을 입력해주세요.';
+    } else if (name.length < 2) {
+      errors.name = '이름은 최소 2글자 이상이어야 합니다.';
+    }
+
+    // Username validation
+    if (!username.trim()) {
+      errors.username = '사용자명을 입력해주세요.';
+    } else if (username.length < 3) {
+      errors.username = '사용자명은 최소 3글자 이상이어야 합니다.';
+    } else if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      errors.username = '사용자명은 영문, 숫자, 언더스코어만 사용 가능합니다.';
+    }
+
+    // Email validation
+    if (!email.trim()) {
+      errors.email = '이메일을 입력해주세요.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = '올바른 이메일 형식을 입력해주세요.';
+    }
+
+    // Password validation
+    if (!password) {
+      errors.password = '비밀번호를 입력해주세요.';
+    } else if (password.length < 6) {
+      errors.password = '비밀번호는 최소 6글자 이상이어야 합니다.';
+    }
+
+    // Password confirmation validation
+    if (!password2) {
+      errors.password2 = '비밀번호 확인을 입력해주세요.';
+    } else if (password !== password2) {
+      errors.password2 = '비밀번호가 일치하지 않습니다.';
+    }
+
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
     
-    // 유효성 검사
-    if (!name || !username || !email || !password || !password2) {
-      setAlert('모든 항목을 입력해주세요', 'danger');
+    if (!validateForm()) {
+      setAlert('입력 정보를 확인해주세요.', 'danger');
       return;
     }
-    
-    if (password !== password2) {
-      setAlert('비밀번호가 일치하지 않습니다', 'danger');
-      return;
-    }
-    
-    if (password.length < 6) {
-      setAlert('비밀번호는 6자 이상이어야 합니다', 'danger');
-      return;
-    }
-    
+
     setLoading(true);
     
     try {
-      const result = await register({
-        name,
-        username,
-        email,
-        password,
-        role: 'member' // 기본 역할은 member
+      await register({
+        name: name.trim(),
+        username: username.trim(),
+        email: email.trim(),
+        password
       });
-      
-      if (!result.success) {
-        setAlert(result.error, 'danger');
-      } else {
-        setAlert('회원가입 성공!', 'success');
-        navigate('/');
-      }
     } catch (err) {
-      setAlert('회원가입 실패', 'danger');
+      console.error('Registration error:', err);
     } finally {
       setLoading(false);
     }
   };
-  
+
   return (
-    <RegisterContainer>
-      <RegisterCard>
-        <RegisterTitle>회원가입</RegisterTitle>
-        <RegisterForm onSubmit={onSubmit}>
-          <FormGroup>
-            <FormLabel htmlFor="name">이름</FormLabel>
-            <FormInput
+    <div className="auth-container">
+      <div className="auth-card">
+        <div className="auth-header">
+          <h2>회원가입</h2>
+          <p className="text-muted">새 계정을 만들어 시작하세요</p>
+        </div>
+
+        <form onSubmit={onSubmit}>
+          <div className="form-group">
+            <label htmlFor="name" className="form-label">
+              이름 <span className="text-danger">*</span>
+            </label>
+            <input
               type="text"
+              className={`form-control ${validationErrors.name || error ? 'is-invalid' : ''}`}
               id="name"
               name="name"
               value={name}
               onChange={onChange}
-              placeholder="이름을 입력하세요"
+              placeholder="실제 이름을 입력하세요"
               required
             />
-          </FormGroup>
-          <FormGroup>
-            <FormLabel htmlFor="username">사용자 이름</FormLabel>
-            <FormInput
+            {validationErrors.name && (
+              <div className="invalid-feedback">{validationErrors.name}</div>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="username" className="form-label">
+              사용자명 <span className="text-danger">*</span>
+            </label>
+            <input
               type="text"
+              className={`form-control ${validationErrors.username || error ? 'is-invalid' : ''}`}
               id="username"
               name="username"
               value={username}
               onChange={onChange}
-              placeholder="사용자 이름을 입력하세요"
+              placeholder="영문, 숫자, 언더스코어만 사용"
               required
             />
-          </FormGroup>
-          <FormGroup>
-            <FormLabel htmlFor="email">이메일</FormLabel>
-            <FormInput
+            {validationErrors.username && (
+              <div className="invalid-feedback">{validationErrors.username}</div>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="email" className="form-label">
+              이메일 <span className="text-danger">*</span>
+            </label>
+            <input
               type="email"
+              className={`form-control ${validationErrors.email || error ? 'is-invalid' : ''}`}
               id="email"
               name="email"
               value={email}
               onChange={onChange}
-              placeholder="이메일 주소를 입력하세요"
+              placeholder="이메일을 입력하세요"
               required
             />
-          </FormGroup>
-          <FormGroup>
-            <FormLabel htmlFor="password">비밀번호</FormLabel>
-            <FormInput
+            {validationErrors.email && (
+              <div className="invalid-feedback">{validationErrors.email}</div>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password" className="form-label">
+              비밀번호 <span className="text-danger">*</span>
+            </label>
+            <input
               type="password"
+              className={`form-control ${validationErrors.password || error ? 'is-invalid' : ''}`}
               id="password"
               name="password"
               value={password}
               onChange={onChange}
-              placeholder="비밀번호를 입력하세요 (최소 6자)"
+              placeholder="최소 6글자 이상"
               required
             />
-          </FormGroup>
-          <FormGroup>
-            <FormLabel htmlFor="password2">비밀번호 확인</FormLabel>
-            <FormInput
+            {validationErrors.password && (
+              <div className="invalid-feedback">{validationErrors.password}</div>
+            )}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="password2" className="form-label">
+              비밀번호 확인 <span className="text-danger">*</span>
+            </label>
+            <input
               type="password"
+              className={`form-control ${validationErrors.password2 || error ? 'is-invalid' : ''}`}
               id="password2"
               name="password2"
               value={password2}
@@ -225,16 +208,52 @@ const Register = () => {
               placeholder="비밀번호를 다시 입력하세요"
               required
             />
-          </FormGroup>
-          <SubmitButton type="submit" disabled={loading}>
-            {loading ? '가입 중...' : '회원가입'}
-          </SubmitButton>
-        </RegisterForm>
-        <LoginLink>
-          이미 계정이 있으신가요? <Link to="/login">로그인</Link>
-        </LoginLink>
-      </RegisterCard>
-    </RegisterContainer>
+            {validationErrors.password2 && (
+              <div className="invalid-feedback">{validationErrors.password2}</div>
+            )}
+          </div>
+
+          {error && (
+            <div className="alert alert-danger" style={{ fontSize: '0.875rem' }}>
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            className="btn btn-primary btn-block"
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner spinner-sm mr-2"></span>
+                가입 중...
+              </>
+            ) : (
+              '회원가입'
+            )}
+          </button>
+        </form>
+
+        <div className="text-center mt-3">
+          <p className="text-muted">
+            이미 계정이 있으신가요?{' '}
+            <Link to="/login" className="text-primary">
+              로그인
+            </Link>
+          </p>
+        </div>
+
+        <div className="mt-3 p-3" style={{ backgroundColor: '#f8f9fa', borderRadius: '0.375rem', fontSize: '0.875rem' }}>
+          <p className="text-muted mb-1">
+            <strong>참고:</strong> 회원가입 후 관리자가 권한을 설정해드립니다.
+          </p>
+          <p className="text-muted mb-0">
+            기본 권한은 '멤버'로 설정됩니다.
+          </p>
+        </div>
+      </div>
+    </div>
   );
 };
 

@@ -1,255 +1,155 @@
 // client/src/pages/dashboard/UpcomingReportCard.js
-
-import React, { useState, useEffect, useContext } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { AuthContext } from '../../context/AuthContext';
-import styled from 'styled-components';
-import api from '../../services/api';
-import { format, differenceInDays } from 'date-fns';
-
-const Card = styled.div`
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-  overflow: hidden;
-`;
-
-const CardHeader = styled.div`
-  padding: 1.2rem;
-  border-bottom: 1px solid #eee;
-  background-color: ${props => props.isUrgent ? '#fff5f5' : 'white'};
-`;
-
-const ReportTitle = styled(Link)`
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin: 0;
-  color: #212529;
-  text-decoration: none;
-  display: block;
-  
-  &:hover {
-    color: #0366d6;
-    text-decoration: none;
-  }
-`;
-
-const TeamName = styled(Link)`
-  font-size: 0.9rem;
-  color: #6c757d;
-  margin-top: 0.25rem;
-  display: block;
-  text-decoration: none;
-  
-  &:hover {
-    color: #0366d6;
-    text-decoration: none;
-  }
-`;
-
-const CardBody = styled.div`
-  padding: 1.2rem;
-`;
-
-const StatusRow = styled.div`
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-`;
-
-const StatusItem = styled.div`
-  text-align: center;
-  flex: 1;
-`;
-
-const StatusLabel = styled.div`
-  font-size: 0.75rem;
-  color: #6c757d;
-  margin-bottom: 0.25rem;
-`;
-
-const StatusValue = styled.div`
-  font-size: 0.9rem;
-  font-weight: 600;
-  color: #212529;
-`;
-
-const ProgressBar = styled.div`
-  width: 100%;
-  height: 0.5rem;
-  background-color: #e9ecef;
-  border-radius: 0.25rem;
-  margin-bottom: 1rem;
-  overflow: hidden;
-`;
-
-const ProgressFill = styled.div`
-  height: 100%;
-  background-color: ${props => {
-    if (props.value >= 75) return '#28a745';
-    if (props.value >= 50) return '#17a2b8';
-    if (props.value >= 25) return '#fd7e14';
-    return '#dc3545';
-  }};
-  width: ${props => `${props.value}%`};
-  transition: width 0.3s ease;
-`;
-
-const DateInfo = styled.div`
-  display: flex;
-  justify-content: space-between;
-  font-size: 0.85rem;
-  color: #6c757d;
-  margin-top: 1rem;
-`;
-
-const DateRange = styled.div`
-`;
-
-const DeadlineInfo = styled.div`
-  color: ${props => props.isUrgent ? '#dc3545' : '#6c757d'};
-  font-weight: ${props => props.isUrgent ? '600' : 'normal'};
-`;
-
-const CardFooter = styled.div`
-  padding: 1rem 1.2rem;
-  background-color: #f8f9fa;
-  border-top: 1px solid #eee;
-  display: flex;
-  justify-content: flex-end;
-`;
-
-const EditButton = styled(Link)`
-  display: inline-block;
-  padding: 0.375rem 0.75rem;
-  font-size: 0.875rem;
-  text-align: center;
-  cursor: pointer;
-  border-radius: 4px;
-  background-color: #0366d6;
-  color: white;
-  border: none;
-  text-decoration: none;
-  
-  &:hover {
-    background-color: #0254ac;
-    text-decoration: none;
-    color: white;
-  }
-`;
 
 const UpcomingReportCard = ({ report }) => {
-  const [team, setTeam] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [daysLeft, setDaysLeft] = useState(0);
-  const { user } = useContext(AuthContext);
-  
-  useEffect(() => {
-    const fetchTeam = async () => {
-      try {
-        if (report.team) {
-          const res = await api.get(`/teams/${report.team}`);
-          setTeam(res.data.data);
-        }
-        
-        // 남은 일수 계산
-        const endDate = new Date(report.endDate);
-        const today = new Date();
-        setDaysLeft(differenceInDays(endDate, today));
-        
-        setLoading(false);
-      } catch (err) {
-        console.error('팀 정보 로드 오류:', err);
-        setLoading(false);
-      }
-    };
-    
-    fetchTeam();
-  }, [report]);
-  
-  // 상태에 따른 텍스트
-  const getStatusText = (status) => {
+  const getStatusInfo = (status) => {
     switch (status) {
-      case 'completed': return '완료됨';
-      case 'in_progress': return '진행 중';
-      case 'not_started': return '시작 전';
-      default: return '알 수 없음';
+      case 'completed':
+        return { color: 'success', text: '완료', icon: 'fas fa-check-circle' };
+      case 'in_progress':
+        return { color: 'warning', text: '진행 중', icon: 'fas fa-clock' };
+      case 'not_started':
+        return { color: 'secondary', text: '시작 전', icon: 'fas fa-pause-circle' };
+      default:
+        return { color: 'secondary', text: '알 수 없음', icon: 'fas fa-question-circle' };
     }
   };
-  
-  // 날짜 포맷
+
+  const getDaysUntilDeadline = (endDate) => {
+    const now = new Date();
+    const deadline = new Date(endDate);
+    const diffTime = deadline - now;
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 0) return { days: Math.abs(diffDays), isOverdue: true };
+    return { days: diffDays, isOverdue: false };
+  };
+
+  const getUrgencyLevel = (days, isOverdue) => {
+    if (isOverdue) return { level: 'danger', text: '지연' };
+    if (days <= 1) return { level: 'danger', text: '긴급' };
+    if (days <= 3) return { level: 'warning', text: '주의' };
+    if (days <= 7) return { level: 'info', text: '여유' };
+    return { level: 'secondary', text: '충분' };
+  };
+
   const formatDate = (dateString) => {
-    const date = new Date(dateString);
-    return format(date, 'yyyy-MM-dd');
+    return new Date(dateString).toLocaleDateString('ko-KR', {
+      month: 'short',
+      day: 'numeric',
+      weekday: 'short'
+    });
   };
-  
-  const isUrgent = daysLeft <= 2;
-  
-  // 권한 확인 (팀 리더, 관리자)
-  const isAuthorized = () => {
-    if (!team || !user) return false;
-    return team.leader._id === user._id || user.role === 'admin';
+
+  const formatDateTime = (dateString) => {
+    return new Date(dateString).toLocaleString('ko-KR', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
   };
-  
-  if (loading) {
-    return <div>로딩 중...</div>;
-  }
-  
+
+  const status = getStatusInfo(report.status);
+  const deadlineInfo = getDaysUntilDeadline(report.endDate);
+  const urgency = getUrgencyLevel(deadlineInfo.days, deadlineInfo.isOverdue);
+
   return (
-    <Card>
-      <CardHeader isUrgent={isUrgent}>
-        <ReportTitle to={`/reports/${report._id}`}>
-          {team?.name} {report.weekNumber}주차 보고서
-        </ReportTitle>
-        <TeamName to={`/teams/${team?._id}`}>
-          {team?.name} ({team?.type === 'project' ? '프로젝트' : '스터디'})
-        </TeamName>
-      </CardHeader>
-      
-      <CardBody>
-        <StatusRow>
-          <StatusItem>
-            <StatusLabel>상태</StatusLabel>
-            <StatusValue>{getStatusText(report.status)}</StatusValue>
-          </StatusItem>
-          <StatusItem>
-            <StatusLabel>완료율</StatusLabel>
-            <StatusValue>{report.completionRate}%</StatusValue>
-          </StatusItem>
-          <StatusItem>
-            <StatusLabel>제출자</StatusLabel>
-            <StatusValue>{report.submittedBy?.name || '알 수 없음'}</StatusValue>
-          </StatusItem>
-        </StatusRow>
+    <div className="list-group-item list-group-item-action">
+      <div className="d-flex w-100 justify-content-between align-items-start">
+        <div className="flex-grow-1">
+          <div className="d-flex align-items-center mb-2">
+            <h6 className="mb-0">
+              <Link 
+                to={`/reports/${report._id}`} 
+                className="text-decoration-none"
+                style={{ color: 'inherit' }}
+              >
+                {report.team?.name || 'Unknown Team'} - {report.weekNumber}주차
+              </Link>
+            </h6>
+            <span className={`badge badge-${status.color} ml-2`} style={{ fontSize: '0.7rem' }}>
+              <i className={`${status.icon} mr-1`}></i>
+              {status.text}
+            </span>
+          </div>
+          
+          <div className="mb-2">
+            <small className="text-muted">
+              <i className="fas fa-calendar-alt mr-1"></i>
+              {formatDate(report.startDate)} - {formatDate(report.endDate)}
+            </small>
+          </div>
+          
+          {report.goals && (
+            <p className="mb-2 text-muted" style={{ fontSize: '0.875rem' }}>
+              <strong>목표:</strong> {report.goals.substring(0, 100)}
+              {report.goals.length > 100 && '...'}
+            </p>
+          )}
+          
+          <div className="d-flex align-items-center justify-content-between">
+            <div className="d-flex align-items-center">
+              {report.completionRate !== undefined && (
+                <div className="d-flex align-items-center mr-3">
+                  <div className="progress mr-2" style={{ width: '60px', height: '8px' }}>
+                    <div 
+                      className={`progress-bar ${
+                        report.completionRate >= 80 ? 'progress-bar-success' :
+                        report.completionRate >= 60 ? 'progress-bar-warning' : 'progress-bar-danger'
+                      }`}
+                      style={{ width: `${report.completionRate}%` }}
+                    ></div>
+                  </div>
+                  <small className="text-muted">{report.completionRate}%</small>
+                </div>
+              )}
+              
+              {report.submittedBy && (
+                <small className="text-muted">
+                  <i className="fas fa-user mr-1"></i>
+                  {report.submittedBy.name || report.submittedBy.username}
+                </small>
+              )}
+            </div>
+            
+            <div className="d-flex align-items-center">
+              <span 
+                className={`badge badge-${urgency.level} mr-2`} 
+                style={{ fontSize: '0.7rem' }}
+                title={formatDateTime(report.endDate)}
+              >
+                {deadlineInfo.isOverdue ? 
+                  `${deadlineInfo.days}일 지연` : 
+                  deadlineInfo.days === 0 ? '오늘 마감' :
+                  deadlineInfo.days === 1 ? '내일 마감' :
+                  `${deadlineInfo.days}일 남음`
+                }
+              </span>
+            </div>
+          </div>
+        </div>
         
-        <ProgressBar>
-          <ProgressFill value={report.completionRate} />
-        </ProgressBar>
-        
-        <DateInfo>
-          <DateRange>
-            {formatDate(report.startDate)} ~ {formatDate(report.endDate)}
-          </DateRange>
-          <DeadlineInfo isUrgent={isUrgent}>
-            {daysLeft < 0 ? (
-              '마감 기한 지남'
-            ) : daysLeft === 0 ? (
-              '오늘 마감'
-            ) : (
-              `${daysLeft}일 남음`
-            )}
-          </DeadlineInfo>
-        </DateInfo>
-      </CardBody>
-      
-      <CardFooter>
-        {isAuthorized() && (
-          <EditButton to={`/reports/${report._id}/edit`}>
-            보고서 작성하기
-          </EditButton>
-        )}
-      </CardFooter>
-    </Card>
+        <div className="ml-3 d-flex flex-column align-items-end">
+          <Link 
+            to={`/reports/${report._id}`}
+            className="btn btn-sm btn-outline-primary mb-1"
+          >
+            보기
+          </Link>
+          {report.status !== 'completed' && (
+            <Link 
+              to={`/reports/${report._id}/edit`}
+              className="btn btn-sm btn-outline-secondary"
+            >
+              수정
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
   );
 };
 

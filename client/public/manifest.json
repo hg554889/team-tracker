@@ -1,6 +1,7 @@
 {
-  "short_name": "React App",
-  "name": "Create React App Sample",
+  "short_name": "Team Tracker",
+  "name": "Team Tracker - 동아리 팀 관리 시스템",
+  "description": "동아리 팀의 주간 활동과 보고서를 효율적으로 관리하는 웹 애플리케이션",
   "icons": [
     {
       "src": "favicon.ico",
@@ -20,6 +21,7 @@
   ],
   "start_url": ".",
   "display": "standalone",
-  "theme_color": "#000000",
-  "background_color": "#ffffff"
+  "theme_color": "#0366d6",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary"
 }

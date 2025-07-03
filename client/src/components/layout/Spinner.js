@@ -1,36 +1,17 @@
 // client/src/components/layout/Spinner.js
-
 import React from 'react';
-import styled from 'styled-components';
 
-const SpinnerContainer = styled.div`
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 100vh;
-  width: 100%;
-`;
-
-const SpinnerElement = styled.div`
-  width: 50px;
-  height: 50px;
-  border: 5px solid #f3f3f3;
-  border-top: 5px solid #0366d6;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-`;
-
-const Spinner = () => {
+function Spinner({ size = 'md' }) {
+  const px = size === 'sm' ? 16 : size === 'lg' ? 48 : 32;
   return (
-    <SpinnerContainer>
-      <SpinnerElement />
-    </SpinnerContainer>
+    <div style={{ display: 'inline-block', width: px, height: px }}>
+      <svg viewBox="0 0 50 50" style={{ width: '100%', height: '100%' }}>
+        <circle cx="25" cy="25" r="20" fill="none" stroke="#888" strokeWidth="5" strokeDasharray="90,150" strokeLinecap="round">
+          <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
+        </circle>
+      </svg>
+    </div>
   );
-};
+}
 
 export default Spinner;
