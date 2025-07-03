@@ -17,9 +17,17 @@ const contributionRoutes = require('./routes/contributions');
 // 앱 초기화
 const app = express();
 
+const allowedOrigins = [
+  'https://team-tracker-neon.vercel.app',
+  'http://localhost:3000'
+];
+
 // 미들웨어 설정
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
 app.use(helmet());
 app.use(morgan('dev'));
 
