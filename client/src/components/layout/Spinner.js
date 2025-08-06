@@ -1,16 +1,48 @@
 // client/src/components/layout/Spinner.js
 import React from 'react';
+import styled, { keyframes } from 'styled-components';
 
-function Spinner({ size = 'md' }) {
-  const px = size === 'sm' ? 16 : size === 'lg' ? 48 : 32;
+const spin = keyframes`
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+`;
+
+const SpinnerWrapper = styled.div`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const SpinnerElement = styled.div`
+  width: ${props => 
+    props.size === 'sm' ? '16px' : 
+    props.size === 'lg' ? '48px' : '32px'
+  };
+  height: ${props => 
+    props.size === 'sm' ? '16px' : 
+    props.size === 'lg' ? '48px' : '32px'
+  };
+  border: ${props => 
+    props.size === 'sm' ? '2px' : 
+    props.size === 'lg' ? '4px' : '3px'
+  } solid ${props => props.theme.colors.gray[300]};
+  border-top-color: ${props => props.theme.colors.primary};
+  border-radius: 50%;
+  animation: ${spin} 1s linear infinite;
+`;
+
+const SpinnerText = styled.span`
+  margin-left: ${props => props.theme.spacing.sm};
+  color: ${props => props.theme.colors.text.secondary};
+  font-size: ${props => props.theme.typography.fontSize.sm};
+`;
+
+function Spinner({ size = 'md', text }) {
   return (
-    <div style={{ display: 'inline-block', width: px, height: px }}>
-      <svg viewBox="0 0 50 50" style={{ width: '100%', height: '100%' }}>
-        <circle cx="25" cy="25" r="20" fill="none" stroke="#888" strokeWidth="5" strokeDasharray="90,150" strokeLinecap="round">
-          <animateTransform attributeName="transform" type="rotate" from="0 25 25" to="360 25 25" dur="1s" repeatCount="indefinite" />
-        </circle>
-      </svg>
-    </div>
+    <SpinnerWrapper>
+      <SpinnerElement size={size} />
+      {text && <SpinnerText>{text}</SpinnerText>}
+    </SpinnerWrapper>
   );
 }
 

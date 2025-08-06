@@ -29,7 +29,13 @@ app.use(cors({
   credentials: true,
 }));
 app.use(helmet());
-app.use(morgan('dev'));
+app.use((req, res, next)=>{
+  if (process.env.NODE_ENV === 'production')  {
+    morgan('combined') (req, res, next);
+  } else {
+    morgan('dev') (req, res, next);
+  }
+});
 
 // 데이터베이스 연결
 connectDB();
@@ -58,5 +64,3 @@ process.on('unhandledRejection', (err) => {
   console.log('처리되지 않은 거부:', err.message);
   server.close(() => process.exit(1));
 });
-
-// test
