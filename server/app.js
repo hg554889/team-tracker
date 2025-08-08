@@ -52,7 +52,7 @@ app.get('/', (req, res) => {
 });
 
 // 포트 설정
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 5000;
 
 // 서버 시작
 app.listen(PORT, () => {
