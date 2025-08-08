@@ -8,16 +8,22 @@ import theme from './styles/theme';
 import GlobalStyles from './styles/GlobalStyles';
 import Layout from './components/layout/Layout';
 import PrivateRoute from './components/routing/PrivateRoute';
+
+// 인증 페이지들
 import Login from './pages/Login';
 import Register from './pages/Register';
+
+// 새로 생성한 페이지들
 import Dashboard from './pages/Dashboard';
-import Teams from './pages/Teams';
 import TeamCreate from './pages/TeamCreate';
 import TeamEdit from './pages/TeamEdit';
-import TeamDetails from './pages/TeamDetails';
-import ReportList from './pages/ReportList';
 import ReportCreate from './pages/ReportCreate';
-import ReportDetails from './pages/ReportDetails';
+
+// 기존에 있던 페이지들 (올바른 경로로 수정)
+import Teams from './pages/teams/Teams';
+import TeamDetails from './pages/teams/TeamDetails';
+import ReportList from './pages/ReportList';
+import ReportDetails from './pages/reports/ReportDetails';
 
 function App() {
   return (

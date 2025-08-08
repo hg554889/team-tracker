@@ -1,18 +1,14 @@
 // client/src/utils/setAuthToken.js
-import api from '../services/api';
+import axios from 'axios';
 
-function setAuthToken(token) {
+const setAuthToken = (token) => {
   if (token) {
-    // Apply authorization token to every request if logged in
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    // Set token in localStorage
-    localStorage.setItem('token', token);
+    // 모든 axios 요청에 토큰을 기본 헤더로 설정
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
   } else {
-    // Delete auth header
-    delete api.defaults.headers.common['Authorization'];
-    // Remove token from localStorage
-    localStorage.removeItem('token');
+    // 토큰이 없으면 Authorization 헤더 제거
+    delete axios.defaults.headers.common['Authorization'];
   }
-}
+};
 
 export default setAuthToken;

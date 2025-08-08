@@ -1,11 +1,75 @@
 // client/src/pages/teams/Teams.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
+import styled from 'styled-components';
 import { useAuth } from '../../context/AuthContext';
 import { useAlert } from '../../context/AlertContext';
 import api from '../../services/api';
+import { Card, CardHeader, CardBody, CardTitle, Button, Input, Select, Badge } from '../../components/common';
 import TeamCard from './TeamCard';
 import Spinner from '../../components/layout/Spinner';
+
+const TeamsWrapper = styled.div`
+  padding: ${props => props.theme.spacing.lg};
+`;
+
+const PageHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: ${props => props.theme.spacing.xl};
+  
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+    flex-direction: column;
+    gap: ${props => props.theme.spacing.md};
+    align-items: stretch;
+  }
+`;
+
+const PageTitle = styled.h1`
+  color: ${props => props.theme.colors.text.primary};
+  margin: 0;
+`;
+
+const HeaderActions = styled.div`
+  display: flex;
+  gap: ${props => props.theme.spacing.md};
+  align-items: center;
+`;
+
+const FilterSection = styled(Card)`
+  margin-bottom: ${props => props.theme.spacing.xl};
+`;
+
+const FilterGrid = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr 2fr;
+  gap: ${props => props.theme.spacing.md};
+  align-items: end;
+  
+  @media (max-width: ${props => props.theme.breakpoints.tablet}) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const TeamsGrid = styled.div`
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: ${props => props.theme.spacing.lg};
+`;
+
+const EmptyState = styled.div`
+  text-align: center;
+  padding: ${props => props.theme.spacing['3xl']} ${props => props.theme.spacing.lg};
+  color: ${props => props.theme.colors.text.secondary};
+`;
+
+const LoadingContainer = styled.div`
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 50vh;
+`;
 
 const Teams = () => {
   const { user } = useAuth();
@@ -14,7 +78,8 @@ const Teams = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState({
     type: 'all', // all, study, project
-    search: ''
+    search: '',
+    myTeamsOnly: false
   });
 
   useEffect(() => {
@@ -25,242 +90,244 @@ const Teams = () => {
     try {
       setLoading(true);
       const response = await api.get('/teams');
-      setTeams(response.data || []);
+      
+      // 안전장치: 응답 데이터가 배열인지 확인
+      const teamsData = response.data?.data || response.data || [];
+      const safeTeams = Array.isArray(teamsData) ? teamsData : [];
+      
+      console.log('Teams data:', safeTeams); // 디버깅용
+      setTeams(safeTeams);
     } catch (error) {
       console.error('Teams fetch error:', error);
       setAlert('팀 목록을 불러오는데 실패했습니다.', 'danger');
+      setTeams([]); // 에러 시 빈 배열로 설정
     } finally {
       setLoading(false);
     }
   };
 
   const handleDeleteTeam = async (teamId) => {
-    if (!window.confirm('정말로 이 팀을 삭제하시겠습니까?')) {
+    if (!window.confirm('정말로 이 팀을 삭제하시겠습니까? 모든 보고서도 함께 삭제됩니다.')) {
       return;
     }
 
     try {
       await api.delete(`/teams/${teamId}`);
-      setTeams(teams.filter(team => team._id !== teamId));
+      setTeams(prevTeams => (prevTeams || []).filter(team => team._id !== teamId));
       setAlert('팀이 성공적으로 삭제되었습니다.', 'success');
     } catch (error) {
       console.error('Team delete error:', error);
-      setAlert('팀 삭제에 실패했습니다.', 'danger');
+      const message = error.response?.data?.message || '팀 삭제에 실패했습니다.';
+      setAlert(message, 'danger');
     }
   };
 
-  const canManageTeam = (team) => {
-    if (user?.role === 'admin' || user?.role === 'executive') return true;
-    if (user?.role === 'leader' && team.leader?._id === user._id) return true;
-    return false;
+  const handleFilterChange = (field, value) => {
+    setFilter(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
-  const canCreateTeam = () => {
-    return ['admin', 'executive', 'leader'].includes(user?.role);
-  };
+  // 안전장치를 추가한 필터링
+  const filteredTeams = (teams || []).filter(team => {
+    // 팀 객체가 유효한지 확인
+    if (!team || typeof team !== 'object') {
+      return false;
+    }
 
-  const filteredTeams = teams.filter(team => {
-    // Type filter
+    // 타입 필터
     if (filter.type !== 'all' && team.type !== filter.type) {
       return false;
     }
-    
-    // Search filter
-    if (filter.search) {
-      const searchLower = filter.search.toLowerCase();
-      return (
-        team.name.toLowerCase().includes(searchLower) ||
-        team.description?.toLowerCase().includes(searchLower) ||
-        team.leader?.name?.toLowerCase().includes(searchLower)
-      );
+
+    // 검색 필터
+    if (filter.search && team.name && !team.name.toLowerCase().includes(filter.search.toLowerCase())) {
+      return false;
     }
-    
+
+    // 내 팀만 보기 필터
+    if (filter.myTeamsOnly) {
+      const isMyTeam = team.leader?._id === user._id || 
+                      (team.members && Array.isArray(team.members) && team.members.some(member => member._id === user._id));
+      if (!isMyTeam) {
+        return false;
+      }
+    }
+
     return true;
   });
 
-  const getTeamStats = () => {
-    return {
-      total: teams.length,
-      study: teams.filter(t => t.type === 'study').length,
-      project: teams.filter(t => t.type === 'project').length,
-      myTeams: teams.filter(t => 
-        t.leader?._id === user?._id || 
-        t.members?.some(m => m._id === user?._id)
-      ).length
-    };
+  const canCreateTeam = () => {
+    return user?.role === 'admin' || user?.role === 'executive' || user?.role === 'leader';
   };
 
-  const stats = getTeamStats();
+  const getTeamStats = () => {
+    const safeFilteredTeams = filteredTeams || [];
+    const total = safeFilteredTeams.length;
+    const myTeams = safeFilteredTeams.filter(team => 
+      team.leader?._id === user._id || 
+      (team.members && Array.isArray(team.members) && team.members.some(member => member._id === user._id))
+    ).length;
+    const studyTeams = safeFilteredTeams.filter(team => team.type === 'study').length;
+    const projectTeams = safeFilteredTeams.filter(team => team.type === 'project').length;
+
+    return { total, myTeams, studyTeams, projectTeams };
+  };
 
   if (loading) {
     return (
-      <div className="d-flex justify-content-center align-items-center" style={{ height: '50vh' }}>
-        <Spinner size="lg" />
-      </div>
+      <TeamsWrapper>
+        <LoadingContainer>
+          <Spinner size="lg" text="팀 목록 로딩 중..." />
+        </LoadingContainer>
+      </TeamsWrapper>
     );
   }
 
+  const stats = getTeamStats();
+
   return (
-    <div className="teams">
-      {/* Header */}
-      <div className="d-flex justify-content-between align-items-center mb-4">
+    <TeamsWrapper>
+      <PageHeader>
         <div>
-          <h1>팀 관리</h1>
-          <p className="text-muted mb-0">
-            동아리 내 모든 팀을 관리하고 확인할 수 있습니다.
-          </p>
+          <PageTitle>팀 관리</PageTitle>
+          <div style={{ 
+            marginTop: '8px', 
+            display: 'flex', 
+            gap: '12px', 
+            alignItems: 'center' 
+          }}>
+            <Badge variant="primary">전체 {stats.total}개</Badge>
+            <Badge variant="info">스터디 {stats.studyTeams}개</Badge>
+            <Badge variant="success">프로젝트 {stats.projectTeams}개</Badge>
+            <Badge variant="secondary">내 팀 {stats.myTeams}개</Badge>
+          </div>
         </div>
-        {canCreateTeam() && (
-          <Link to="/teams/create" className="btn btn-primary">
-            <i className="fas fa-plus mr-2"></i>
-            새 팀 생성
-          </Link>
-        )}
-      </div>
+        <HeaderActions>
+          {canCreateTeam() && (
+            <Button as={Link} to="/teams/create" variant="primary">
+              <i className="fas fa-plus" style={{ marginRight: '8px' }} />
+              새 팀 만들기
+            </Button>
+          )}
+        </HeaderActions>
+      </PageHeader>
 
-      {/* Statistics */}
-      <div className="row mb-4">
-        <div className="col-md-3">
-          <div className="card text-center">
-            <div className="card-body">
-              <h3 className="text-primary">{stats.total}</h3>
-              <p className="text-muted mb-0">전체 팀</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card text-center">
-            <div className="card-body">
-              <h3 className="text-info">{stats.study}</h3>
-              <p className="text-muted mb-0">스터디 팀</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card text-center">
-            <div className="card-body">
-              <h3 className="text-success">{stats.project}</h3>
-              <p className="text-muted mb-0">프로젝트 팀</p>
-            </div>
-          </div>
-        </div>
-        <div className="col-md-3">
-          <div className="card text-center">
-            <div className="card-body">
-              <h3 className="text-warning">{stats.myTeams}</h3>
-              <p className="text-muted mb-0">내 팀</p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="card mb-4">
-        <div className="card-body">
-          <div className="row">
-            <div className="col-md-6">
-              <div className="form-group">
-                <label htmlFor="search" className="form-label">팀 검색</label>
-                <input
-                  type="text"
-                  className="form-control"
-                  id="search"
-                  placeholder="팀명, 설명, 리더명으로 검색..."
-                  value={filter.search}
-                  onChange={(e) => setFilter({ ...filter, search: e.target.value })}
-                />
-              </div>
-            </div>
-            <div className="col-md-3">
-              <div className="form-group">
-                <label htmlFor="type-filter" className="form-label">팀 타입</label>
-                <select
-                  className="form-select"
-                  id="type-filter"
-                  value={filter.type}
-                  onChange={(e) => setFilter({ ...filter, type: e.target.value })}
-                >
-                  <option value="all">전체</option>
-                  <option value="study">스터디</option>
-                  <option value="project">프로젝트</option>
-                </select>
-              </div>
-            </div>
-            <div className="col-md-3 d-flex align-items-end">
-              <button
-                className="btn btn-outline-secondary"
-                onClick={() => setFilter({ type: 'all', search: '' })}
+      <FilterSection>
+        <CardHeader>
+          <CardTitle>필터</CardTitle>
+        </CardHeader>
+        <CardBody>
+          <FilterGrid>
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '4px', 
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#495057'
+              }}>
+                팀 유형
+              </label>
+              <Select
+                value={filter.type}
+                onChange={(e) => handleFilterChange('type', e.target.value)}
               >
-                <i className="fas fa-redo mr-2"></i>
-                필터 초기화
-              </button>
+                <option value="all">전체</option>
+                <option value="study">스터디</option>
+                <option value="project">프로젝트</option>
+              </Select>
             </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Teams Grid */}
-      <div className="row">
-        {filteredTeams.length > 0 ? (
-          filteredTeams.map(team => (
-            <div key={team._id} className="col-lg-4 col-md-6 mb-4">
-              <TeamCard 
-                team={team} 
-                canManage={canManageTeam(team)}
-                onDelete={handleDeleteTeam}
-                currentUser={user}
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '4px', 
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#495057'
+              }}>
+                표시 옵션
+              </label>
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                height: '42px',
+                paddingLeft: '12px'
+              }}>
+                <input
+                  type="checkbox"
+                  id="myTeamsOnly"
+                  checked={filter.myTeamsOnly}
+                  onChange={(e) => handleFilterChange('myTeamsOnly', e.target.checked)}
+                  style={{ marginRight: '8px' }}
+                />
+                <label htmlFor="myTeamsOnly" style={{ margin: 0, fontSize: '14px' }}>
+                  내 팀만 보기
+                </label>
+              </div>
+            </div>
+
+            <div>
+              <label style={{ 
+                display: 'block', 
+                marginBottom: '4px', 
+                fontSize: '14px',
+                fontWeight: 500,
+                color: '#495057'
+              }}>
+                팀 이름 검색
+              </label>
+              <Input
+                type="text"
+                placeholder="팀 이름을 입력하세요..."
+                value={filter.search}
+                onChange={(e) => handleFilterChange('search', e.target.value)}
               />
             </div>
-          ))
-        ) : (
-          <div className="col-12">
-            <div className="card">
-              <div className="card-body text-center py-5">
-                <i className="fas fa-users fa-3x text-muted mb-3"></i>
-                <h4 className="text-muted">
-                  {filter.search || filter.type !== 'all' ? 
-                    '조건에 맞는 팀이 없습니다.' : 
-                    '아직 생성된 팀이 없습니다.'
-                  }
-                </h4>
-                <p className="text-muted mb-3">
-                  {filter.search || filter.type !== 'all' ? 
-                    '검색 조건을 변경하거나 필터를 초기화해보세요.' :
-                    '첫 번째 팀을 생성하여 시작해보세요.'
-                  }
-                </p>
-                {canCreateTeam() && (!filter.search && filter.type === 'all') && (
-                  <Link to="/teams/create" className="btn btn-primary">
-                    <i className="fas fa-plus mr-2"></i>
-                    첫 번째 팀 생성하기
-                  </Link>
-                )}
-                {(filter.search || filter.type !== 'all') && (
-                  <button
-                    className="btn btn-outline-primary"
-                    onClick={() => setFilter({ type: 'all', search: '' })}
-                  >
-                    <i className="fas fa-redo mr-2"></i>
-                    모든 팀 보기
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+          </FilterGrid>
+        </CardBody>
+      </FilterSection>
 
-      {/* Summary Info */}
-      {filteredTeams.length > 0 && (
-        <div className="mt-4">
-          <small className="text-muted">
-            총 {filteredTeams.length}개의 팀이 표시되고 있습니다.
-            {filter.search && ` (검색: "${filter.search}")`}
-            {filter.type !== 'all' && ` (타입: ${filter.type === 'study' ? '스터디' : '프로젝트'})`}
-          </small>
-        </div>
+      {filteredTeams.length === 0 ? (
+        <EmptyState>
+          <i className="fas fa-users" style={{ 
+            fontSize: '4rem', 
+            marginBottom: '24px',
+            opacity: 0.3
+          }} />
+          <h3 style={{ marginBottom: '16px' }}>
+            {filter.search || filter.myTeamsOnly || filter.type !== 'all' 
+              ? '조건에 맞는 팀이 없습니다' 
+              : '아직 생성된 팀이 없습니다'
+            }
+          </h3>
+          <p style={{ marginBottom: '24px' }}>
+            {canCreateTeam() 
+              ? '새로운 팀을 생성해서 활동을 시작해보세요.' 
+              : '팀장이나 관리자가 팀을 생성할 때까지 기다려주세요.'
+            }
+          </p>
+          {canCreateTeam() && (
+            <Button as={Link} to="/teams/create" variant="primary" size="lg">
+              <i className="fas fa-plus" style={{ marginRight: '8px' }} />
+              첫 번째 팀 만들기
+            </Button>
+          )}
+        </EmptyState>
+      ) : (
+        <TeamsGrid>
+          {filteredTeams.map((team) => (
+            <TeamCard
+              key={team._id}
+              team={team}
+              onDelete={handleDeleteTeam}
+            />
+          ))}
+        </TeamsGrid>
       )}
-    </div>
+    </TeamsWrapper>
   );
 };
 
