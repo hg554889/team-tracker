@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { useAlert } from '../context/AlertContext';
 import api from '../services/api';
 import { Card, CardHeader, CardBody, CardTitle, Button, Input, Select, Badge } from '../components/common';
-import ReportCard from './reports/ReportCard';  // 경로 수정
+import ReportCard from './/reports/ReportCard';  // 경로 수정
 import Spinner from '../components/layout/Spinner';
 
 const ReportsWrapper = styled.div`
