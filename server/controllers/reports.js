@@ -5,18 +5,36 @@ const Team = require('../models/Team');
 const { validationResult } = require('express-validator');
 const { startOfWeek, endOfWeek, format } = require('date-fns');
 
-// @desc   모든 보고서 가져오기
-// @route  GET /api/reports
-// @access Private
 exports.getReports = async (req, res) => {
   try {
+    console.log('📤 GET /reports request');
+    console.log('👤 User:', {
+      id: req.user.id,
+      role: req.user.role,
+      teams: req.user.teams,
+      teamsCount: req.user.teams?.length
+    });
+
     let query;
 
     // 관리자가 아닌 경우 자신이 속한 팀의 보고서만 볼 수 있음
     if (req.user.role !== 'admin') {
       const teams = req.user.teams;
+      console.log('🔍 Non-admin user, filtering by teams:', teams);
+      
+      if (!teams || teams.length === 0) {
+        console.warn('⚠️ User has no teams assigned');
+        return res.status(200).json({
+          success: true,
+          count: 0,
+          data: [],
+          message: 'No teams assigned to user'
+        });
+      }
+      
       query = WeeklyReport.find({ team: { $in: teams } });
     } else {
+      console.log('👑 Admin user, showing all reports');
       query = WeeklyReport.find();
     }
 
@@ -33,6 +51,14 @@ exports.getReports = async (req, res) => {
       });
 
     const reports = await query;
+    console.log('📋 Found reports:', reports.length);
+    console.log('📋 Reports data:', reports.map(r => ({
+      id: r._id,
+      team: r.team?.name,
+      submittedBy: r.submittedBy?.name,
+      goals: r.goals?.substring(0, 50) + '...',
+      createdAt: r.createdAt
+    })));
 
     res.status(200).json({
       success: true,
@@ -40,7 +66,7 @@ exports.getReports = async (req, res) => {
       data: reports
     });
   } catch (err) {
-    console.error(err.message);
+    console.error('❌ getReports error:', err.message);
     res.status(500).json({
       success: false,
       error: '서버 오류'

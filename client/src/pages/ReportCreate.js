@@ -242,7 +242,9 @@ function ReportCreate() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
+  // 기존 client/src/pages/ReportCreate.js의 handleSubmit 함수만 수정
+
+const handleSubmit = async (e) => {
   e.preventDefault();
   
   if (!canCreateReport()) {
@@ -258,17 +260,25 @@ function ReportCreate() {
   setSubmitting(true);
   
   try {
-    // 보고서 생성
+    // ✅ 기존 formData를 서버가 원하는 형태로 변환
     const reportData = {
-      ...formData,
-      team: team._id,
-      author: user._id
+      goals: formData.summary || formData.title || '목표 미작성',     // 요약이나 제목을 목표로
+      progress: formData.achievements || '진행사항 미작성',           // 성과를 진행사항으로
+      challenges: formData.challenges || '',
+      nextWeekPlan: formData.nextWeekPlan || '',
+      completionRate: formData.completionRate || 0,
+      status: formData.status || 'in_progress'
     };
     
-    const reportResponse = await api.post(`/teams/${id}/reports`, reportData);
+    // 디버깅용 로그
+    console.log('🔄 Original formData:', formData);
+    console.log('📤 Converted reportData:', reportData);
     
-    // ✅ 서버 응답 구조 수정: response.data.data._id
-    const reportId = reportResponse.data.data._id;
+    const reportResponse = await api.post(`/teams/${id}/reports`, reportData);
+    console.log('📥 Server response:', reportResponse.data);
+    
+    // 응답에서 ID 추출 (서버 응답 구조에 따라)
+    const reportId = reportResponse.data.data?._id || reportResponse.data._id;
 
     // 기여도 추가
     if (contributions.length > 0) {
@@ -285,12 +295,27 @@ function ReportCreate() {
     navigate(`/reports/${reportId}`);
     
   } catch (error) {
-    console.error('Report create error:', error);
+    console.error('❌ Report create error:', error);
     
-    // ✅ 에러 메시지 처리 수정
-    const message = error.response?.data?.error || 
-                   error.response?.data?.message || 
-                   '보고서 생성에 실패했습니다.';
+    // 상세 에러 정보 출력
+    if (error.response) {
+      console.error('❌ Error status:', error.response.status);
+      console.error('❌ Error data:', error.response.data);
+    }
+    
+    // 에러 메시지 처리
+    let message = '보고서 생성에 실패했습니다.';
+    
+    if (error.response?.data?.errors) {
+      // express-validator 에러들
+      const errorMessages = error.response.data.errors.map(err => err.msg);
+      message = `입력 오류: ${errorMessages.join(', ')}`;
+    } else if (error.response?.data?.error) {
+      message = error.response.data.error;
+    } else if (error.response?.data?.message) {
+      message = error.response.data.message;
+    }
+    
     setAlert(message, 'danger');
   } finally {
     setSubmitting(false);

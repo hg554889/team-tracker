@@ -84,28 +84,43 @@ function ReportList() {
   }, []);
 
   const fetchData = async () => {
-    try {
-      setLoading(true);
-      const [reportsRes, teamsRes] = await Promise.all([
-        api.get('/reports'),
-        api.get('/teams')
-      ]);
-      
-      // ✨ 여기가 수정된 부분입니다.
-      // API 응답 데이터가 배열인지 확인하고 상태를 업데이트합니다.
-      const reportsData = reportsRes.data;
-      setReports(Array.isArray(reportsData) ? reportsData : []);
-      
-      const teamsData = teamsRes.data;
-      setTeams(Array.isArray(teamsData) ? teamsData : []);
-
-    } catch (error) {
-      console.error('Reports fetch error:', error);
-      setAlert('보고서 목록을 불러오는데 실패했습니다.', 'danger');
-    } finally {
-      setLoading(false);
+  try {
+    setLoading(true);
+    console.log('📤 Fetching reports and teams...');
+    
+    const [reportsRes, teamsRes] = await Promise.all([
+      api.get('/reports'),
+      api.get('/teams')
+    ]);
+    
+    console.log('📥 Reports response:', reportsRes.data);
+    console.log('📥 Teams response:', teamsRes.data);
+    
+    // ✅ 서버 응답 구조에 맞게 수정
+    // 서버에서 { success: true, data: [...] } 형태로 보냄
+    const reportsData = reportsRes.data.data || reportsRes.data;
+    const teamsData = teamsRes.data.data || teamsRes.data;
+    
+    console.log('📋 Processed reports data:', reportsData);
+    console.log('👥 Processed teams data:', teamsData);
+    
+    setReports(Array.isArray(reportsData) ? reportsData : []);
+    setTeams(Array.isArray(teamsData) ? teamsData : []);
+    
+    // 디버깅 정보
+    if (!Array.isArray(reportsData) || reportsData.length === 0) {
+      console.warn('⚠️ No reports found or invalid format');
+      console.warn('User info:', user);
     }
-  };
+
+  } catch (error) {
+    console.error('❌ Reports fetch error:', error);
+    console.error('❌ Error response:', error.response?.data);
+    setAlert('보고서 목록을 불러오는데 실패했습니다.', 'danger');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleDeleteReport = async (reportId) => {
     if (!window.confirm('정말로 이 보고서를 삭제하시겠습니까?')) {
