@@ -49,11 +49,13 @@ exports.getReports = async (req, res) => {
 };
 
 // @desc   특정 팀의 보고서 가져오기
-// @route  GET /api/teams/:teamId/reports
+// @route  GET /api/teams/:id/reports
 // @access Private (Team Members, Admin)
 exports.getTeamReports = async (req, res) => {
   try {
-    const team = await Team.findById(req.params.teamId);
+    // teams 라우터에서는 :id, reports 라우터에서는 :teamId
+    const teamId = req.params.id || req.params.teamId;
+    const team = await Team.findById(teamId);
 
     if (!team) {
       return res.status(404).json({
@@ -70,7 +72,7 @@ exports.getTeamReports = async (req, res) => {
       });
     }
 
-    const reports = await WeeklyReport.find({ team: req.params.teamId })
+    const reports = await WeeklyReport.find({ team: teamId })
       .sort('-weekNumber')
       .populate({
         path: 'submittedBy',
@@ -143,7 +145,7 @@ exports.getReport = async (req, res) => {
 };
 
 // @desc   새 보고서 생성
-// @route  POST /api/teams/:teamId/reports
+// @route  POST /api/teams/:id/reports
 // @access Private (Team Members, Admin)
 exports.createReport = async (req, res) => {
   try {
@@ -152,8 +154,10 @@ exports.createReport = async (req, res) => {
       return res.status(400).json({ errors: errors.array() });
     }
 
-    // 팀 존재 확인
-    const team = await Team.findById(req.params.teamId);
+    // teams 라우터에서는 :id, reports 라우터에서는 :teamId
+    const teamId = req.params.id || req.params.teamId;
+    const team = await Team.findById(teamId);
+    
     if (!team) {
       return res.status(404).json({
         success: false,

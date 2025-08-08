@@ -6,11 +6,9 @@ const {
   getReports,
   getReport,
   updateReport,
-  deleteReport,
-  getTeamReports,
-  createReport
+  deleteReport
 } = require('../controllers/reports');
-const { protect, checkTeamMembership } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 const router = express.Router({ mergeParams: true });
 
@@ -38,17 +36,5 @@ router
     updateReport
   )
   .delete(deleteReport);
-
-// 팀별 보고서 관련 라우트 (teams.js에서 재사용)
-router.route('/teams/:teamId/reports')
-  .get(checkTeamMembership, getTeamReports)
-  .post(
-    [
-      check('goals', '목표는 필수입니다').not().isEmpty(),
-      check('progress', '진행 상황은 필수입니다').not().isEmpty()
-    ],
-    checkTeamMembership,
-    createReport
-  );
 
 module.exports = router;

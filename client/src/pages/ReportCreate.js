@@ -243,53 +243,59 @@ function ReportCreate() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
+  
+  if (!canCreateReport()) {
+    setAlert('보고서를 작성할 권한이 없습니다.', 'warning');
+    return;
+  }
+
+  if (!validateForm()) {
+    setAlert('입력 정보를 확인해주세요.', 'warning');
+    return;
+  }
+
+  setSubmitting(true);
+  
+  try {
+    // 보고서 생성
+    const reportData = {
+      ...formData,
+      team: team._id,
+      author: user._id
+    };
     
-    if (!canCreateReport()) {
-      setAlert('보고서를 작성할 권한이 없습니다.', 'warning');
-      return;
-    }
-
-    if (!validateForm()) {
-      setAlert('입력 정보를 확인해주세요.', 'warning');
-      return;
-    }
-
-    setSubmitting(true);
+    const reportResponse = await api.post(`/teams/${id}/reports`, reportData);
     
-    try {
-      // 보고서 생성
-      const reportData = {
-        ...formData,
-        team: team._id,
-        author: user._id
-      };
-      
-      const reportResponse = await api.post(`/teams/${id}/reports`, reportData);
-      const reportId = reportResponse.data._id;
+    // ✅ 서버 응답 구조 수정: response.data.data._id
+    const reportId = reportResponse.data.data._id;
 
-      // 기여도 추가
-      if (contributions.length > 0) {
-        for (const contribution of contributions) {
-          await api.post(`/reports/${reportId}/contributions`, {
-            description: contribution.description,
-            hours: contribution.hours,
-            member: contribution.member
-          });
-        }
+    // 기여도 추가
+    if (contributions.length > 0) {
+      for (const contribution of contributions) {
+        await api.post(`/reports/${reportId}/contributions`, {
+          description: contribution.description,
+          hours: contribution.hours,
+          member: contribution.member
+        });
       }
-
-      setAlert('보고서가 성공적으로 생성되었습니다!', 'success');
-      navigate(`/reports/${reportId}`);
-      
-    } catch (error) {
-      console.error('Report create error:', error);
-      const message = error.response?.data?.message || '보고서 생성에 실패했습니다.';
-      setAlert(message, 'danger');
-    } finally {
-      setSubmitting(false);
     }
-  };
+
+    setAlert('보고서가 성공적으로 생성되었습니다!', 'success');
+    navigate(`/reports/${reportId}`);
+    
+  } catch (error) {
+    console.error('Report create error:', error);
+    
+    // ✅ 에러 메시지 처리 수정
+    const message = error.response?.data?.error || 
+                   error.response?.data?.message || 
+                   '보고서 생성에 실패했습니다.';
+    setAlert(message, 'danger');
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   const handleCancel = () => {
     const hasContent = Object.values(formData).some(value => 
