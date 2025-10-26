@@ -14,6 +14,7 @@ export const AuthProvider = ({ children }) => {
   const { setAlert } = useAlert();
 
   // 유저 정보 fetch - axios로 통일
+  // git push가 정상 작동하는지 테스트
   const fetchUser = async () => {
     try {
       const token = localStorage.getItem('token');
